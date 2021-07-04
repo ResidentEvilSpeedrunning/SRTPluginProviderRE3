@@ -1,13 +1,17 @@
 ﻿using SRTPluginProviderRE3.Structures;
 using System;
+using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace SRTPluginProviderRE3
 {
     public class GameMemoryRE3 : IGameMemoryRE3
     {
-        private const string IGT_TIMESPAN_STRING_FORMAT = @"hh\:mm\:ss\.fff";
+        private const string IGT_TIMESPAN_STRING_FORMAT = @"hh\:mm\:ss";
+        public string GameName => "RE3R";
+        public string VersionInfo => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 
         public int PlayerCurrentHealth { get => _playerCurrentHealth; set => _playerCurrentHealth = value; }
         internal int _playerCurrentHealth;

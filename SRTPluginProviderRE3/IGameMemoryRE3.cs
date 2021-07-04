@@ -5,6 +5,8 @@ namespace SRTPluginProviderRE3
 {
     public interface IGameMemoryRE3
     {
+        string GameName { get; }
+        string VersionInfo { get; }
         int PlayerCurrentHealth { get; set; }
         int PlayerMaxHealth { get; set; }
         int PlayerDeathCount { get; set; }
