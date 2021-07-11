@@ -1,19 +1,28 @@
-﻿using SRTPluginProviderRE3.Structures;
+﻿using SRTPluginProviderRE3.Structs.GameStructs;
+using SRTPluginProviderRE3.Structs;
 using System;
+using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace SRTPluginProviderRE3
 {
     public class GameMemoryRE3 : IGameMemoryRE3
     {
-        private const string IGT_TIMESPAN_STRING_FORMAT = @"hh\:mm\:ss\.fff";
+        private const string IGT_TIMESPAN_STRING_FORMAT = @"hh\:mm\:ss";
 
-        public int PlayerCurrentHealth { get => _playerCurrentHealth; set => _playerCurrentHealth = value; }
-        internal int _playerCurrentHealth;
+        public string GameName => "RE3R";
 
-        public int PlayerMaxHealth { get => _playerMaxHealth; set => _playerMaxHealth = value; }
-        internal int _playerMaxHealth;
+        public string VersionInfo => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
+
+        public CharacterEnumeration PlayerCharacter { get => (CharacterEnumeration)_playerCharacter; set => _playerCharacter = (int)value; }
+        internal int _playerCharacter;
+
+        public GamePlayer Player { get => _player; set => _player = value; }
+        internal GamePlayer _player;
+
+        public string PlayerName => string.Format("{0}: ", PlayerCharacter.ToString());
 
         public int PlayerDeathCount { get => _playerDeathCount; set => _playerDeathCount = value; }
         internal int _playerDeathCount;
@@ -21,32 +30,20 @@ namespace SRTPluginProviderRE3
         public int PlayerInventoryCount { get => _playerInventoryCount; set => _playerInventoryCount = value; }
         internal int _playerInventoryCount;
 
-        public InventoryEntry[] PlayerInventory { get => _playerInventory; set => _playerInventory = value; }
-        internal InventoryEntry[] _playerInventory;
+        public GameInventoryEntry[] PlayerInventory { get => _playerInventory; set => _playerInventory = value; }
+        internal GameInventoryEntry[] _playerInventory;
 
         public EnemyHP[] EnemyHealth { get => _enemyHealth; set => _enemyHealth = value; }
         internal EnemyHP[] _enemyHealth;
 
-        public long IGTRunningTimer { get => _igtRunningTimer; set => _igtRunningTimer = value; }
-        internal long _igtRunningTimer;
-
-        public long IGTCutsceneTimer { get => _igtCutsceneTimer; set => _igtCutsceneTimer = value; }
-        internal long _igtCutsceneTimer;
-
-        public long IGTMenuTimer { get => _igtMenuTimer; set => _igtMenuTimer = value; }
-        internal long _igtMenuTimer;
-
-        public long IGTPausedTimer { get => _igtPausedTimer; set => _igtPausedTimer = value; }
-        internal long _igtPausedTimer;
+        public GameTimer Timer { get => _timer; set => _timer = value; }
+        internal GameTimer _timer;
 
         public int Difficulty { get => _difficulty; set => _difficulty = value; }
         internal int _difficulty;
 
-        public int Rank { get => _rank; set => _rank = value; }
-        internal int _rank;
-
-        public float RankScore { get => _rankScore; set => _rankScore = value; }
-        internal float _rankScore;
+        public GameRankManager RankManager { get => _rankManager; set => _rankManager = value; }
+        internal GameRankManager _rankManager;
 
         public int Saves { get => _saves; set => _saves = value; }
         internal int _saves;
@@ -57,20 +54,18 @@ namespace SRTPluginProviderRE3
         public float FrameDelta { get => _frameDelta; set => _frameDelta = value; }
         internal float _frameDelta;
 
-        public bool IsRunning { get => _isRunning != 0x00; set => _isRunning = (byte)(value ? 0x01 : 0x00); }
-        internal byte _isRunning;
+        public GameBools GameBools { get => _gameBools; set => _gameBools = value; }
+        internal GameBools _gameBools;
+        public bool IsRunning => GameBools.isRunning != 0x00;
 
-        public bool IsCutscene { get => _isCutscene != 0x00; set => _isCutscene = (byte)(value ? 0x01 : 0x00); }
-        internal byte _isCutscene;
+        public bool IsCutscene => GameBools.isCutscene != 0x00;
 
-        public bool IsMenu { get => _isMenu != 0x00; set => _isMenu = (byte)(value ? 0x01 : 0x00); }
-        internal byte _isMenu;
+        public bool IsMenu => GameBools.isMenu != 0x00;
 
-        public bool IsPaused { get => _isPaused != 0x00; set => _isPaused = (byte)(value ? 0x01 : 0x00); }
-        internal byte _isPaused;
+        public bool IsPaused => GameBools.isPaused != 0x00;
 
         // Public Properties - Calculated
-        public long IGTCalculated => unchecked(IGTRunningTimer - IGTCutsceneTimer - IGTPausedTimer);
+        public long IGTCalculated => unchecked(Timer.IGTRunningTimer - Timer.IGTCutsceneTimer - Timer.IGTPausedTimer);
 
         public long IGTCalculatedTicks => unchecked(IGTCalculated * 10L);
 
