@@ -105,6 +105,21 @@ namespace SRTPluginProviderRE3
         {
             switch (version)
             {
+                case GameVersion.RE3_WW_20230425_1:
+                    {
+                        pointerAddressFrameDelta = 0x08CE67A0; //
+                        pointerAddressMapID = 0x054DF0F8; //
+                        pointerAddressSaves = 0x08DAFBC0; //
+                        pointerAddressDeathCount = 0x08DAFBC0; //
+                        pointerAddressDifficulty = 0x08D84C70; //
+                        pointerAddressState = 0x08DB8D20; //
+                        pointerAddressIGT = 0x08DB3BA0; //
+                        pointerAddressRank = 0x08D816A8; //
+                        pointerAddressHP = 0x08D85BA0; //
+                        pointerAddressInventory = 0x08D85BA0; //
+                        pointerAddressEnemy = 0x08D868B0; //
+                        return true;
+                    }
                 case GameVersion.RE3_WW_20211217_1:
                     {
                         pointerAddressFrameDelta = 0x08CE67A0; //
