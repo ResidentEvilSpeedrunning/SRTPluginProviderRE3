@@ -2,15 +2,16 @@
 
 namespace SRTPluginProviderRE3.Structs.GameStructs
 {
-    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 0x8)]
+    [StructLayout(LayoutKind.Explicit, Pack = 1, Size = 0x64)]
 
-    public struct GamePlayer
+    public struct HitPointController
     {
-        [FieldOffset(0x0)] private int maxHP;
-        [FieldOffset(0x4)] private int currentHP;
+        [FieldOffset(0x54)] private int defaultHitPoints;
+        [FieldOffset(0x58)] private int currentHitPoints;
+        [FieldOffset(0x62)] private byte noDamage;
 
-        public int CurrentHP => currentHP;
-        public int MaxHP => maxHP;
+        public int MaxHP => defaultHitPoints;
+        public int CurrentHP => currentHitPoints;
         public float Percentage => CurrentHP > 0 ? (float)CurrentHP / (float)MaxHP : 0f;
         public bool IsAlive => CurrentHP != 0 && MaxHP != 0 && CurrentHP > 0 && CurrentHP <= MaxHP;
         public PlayerState HealthState

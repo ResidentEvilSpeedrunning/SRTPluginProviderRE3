@@ -16,11 +16,11 @@ namespace SRTPluginProviderRE3
 
         public string VersionInfo => FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).FileVersion;
 
-        public CharacterEnumeration PlayerCharacter { get => (CharacterEnumeration)_playerCharacter; set => _playerCharacter = (int)value; }
+        private CharacterEnumeration PlayerCharacter { get => (CharacterEnumeration)_playerCharacter; set => _playerCharacter = (int)value; }
         internal int _playerCharacter;
 
-        public GamePlayer Player { get => _player; set => _player = value; }
-        internal GamePlayer _player;
+        public HitPointController Player { get => _player; set => _player = value; }
+        internal HitPointController _player;
 
         public string PlayerName => string.Format("{0}: ", PlayerCharacter.ToString());
 
@@ -30,42 +30,36 @@ namespace SRTPluginProviderRE3
         public int PlayerInventoryCount { get => _playerInventoryCount; set => _playerInventoryCount = value; }
         internal int _playerInventoryCount;
 
-        public GameInventoryEntry[] PlayerInventory { get => _playerInventory; set => _playerInventory = value; }
-        internal GameInventoryEntry[] _playerInventory;
+        public InventoryEntry[] PlayerInventory { get => _playerInventory; set => _playerInventory = value; }
+        internal InventoryEntry[] _playerInventory;
 
         public EnemyHP[] EnemyHealth { get => _enemyHealth; set => _enemyHealth = value; }
         internal EnemyHP[] _enemyHealth;
 
-        public GameTimer Timer { get => _timer; set => _timer = value; }
-        internal GameTimer _timer;
+        public GameClockSaveData Timer { get => _timer; set => _timer = value; }
+        internal GameClockSaveData _timer;
 
-        public int Difficulty { get => _difficulty; set => _difficulty = value; }
+        private int Difficulty { get => _difficulty; set => _difficulty = value; }
         internal int _difficulty;
 
-        public GameRankManager RankManager { get => _rankManager; set => _rankManager = value; }
-        internal GameRankManager _rankManager;
+        public GameRankSystem RankManager { get => _rankManager; set => _rankManager = value; }
+        internal GameRankSystem _rankManager;
 
         public int Saves { get => _saves; set => _saves = value; }
         internal int _saves;
 
-        public int MapID { get => _mapID; set => _mapID = value; }
-        internal int _mapID;
+        private GameClock GameClock { get => _gameClock; set => _gameClock = value; }
+        internal GameClock _gameClock;
+        public bool IsRunning => GameClock.MeasureGameElapsedTime != 0x00;
 
-        public float FrameDelta { get => _frameDelta; set => _frameDelta = value; }
-        internal float _frameDelta;
+        public bool IsCutscene => GameClock.MeasureDemoSpendingTime != 0x00;
 
-        public GameBools GameBools { get => _gameBools; set => _gameBools = value; }
-        internal GameBools _gameBools;
-        public bool IsRunning => GameBools.isRunning != 0x00;
+        public bool IsMenu => GameClock.MeasureInventorySpendingTime != 0x00;
 
-        public bool IsCutscene => GameBools.isCutscene != 0x00;
-
-        public bool IsMenu => GameBools.isMenu != 0x00;
-
-        public bool IsPaused => GameBools.isPaused != 0x00;
+        public bool IsPaused => GameClock.MeasurePauseSpendingTime != 0x00;
 
         // Public Properties - Calculated
-        public long IGTCalculated => unchecked(Timer.IGTRunningTimer - Timer.IGTCutsceneTimer - Timer.IGTPausedTimer);
+        public long IGTCalculated => unchecked(Timer.GameElapsedTime - Timer.DemoSpendingTime - Timer.PauseSpendingTime);
 
         public long IGTCalculatedTicks => unchecked(IGTCalculated * 10L);
 

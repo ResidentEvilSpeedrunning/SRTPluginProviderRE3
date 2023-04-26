@@ -18,40 +18,30 @@ namespace SRTPluginProviderRE3
         public bool HasScanned;
         public bool ProcessRunning => memoryAccess != null && memoryAccess.ProcessRunning;
         public int ProcessExitCode => (memoryAccess != null) ? memoryAccess.ProcessExitCode : 0;
-        private int EnemyTableCount;
 
-        // Pointer Address Variables
-        private int pointerAddressIGT;
-        private int pointerAddressRank;
-        private int pointerAddressSaves;
-        private int pointerAddressMapID;
-        private int pointerAddressFrameDelta;
-        private int pointerAddressState;
-        private int pointerAddressHP;
-        private int pointerAddressInventory;
-        private int pointerAddressEnemy;
-        private int pointerAddressDeathCount;
-        private int pointerAddressDifficulty;
+        // Pointer Addresses
+        private int pAddressGameClock;
+        private int pAddressGameRankSystem;
+        private int pAddressPlayerManager;
+        private int pAddressInventoryManager;
+        private int pAddressEnemyManager;
+        private int pAddressMainFlowManager;
 
         // Pointer Classes
         private IntPtr BaseAddress { get; set; }
-        private MultilevelPointer PointerIGT { get; set; }
-        private MultilevelPointer PointerRank { get; set; }
-        private MultilevelPointer PointerSaves { get; set; }
-        private MultilevelPointer PointerMapID { get; set; }
-        private MultilevelPointer PointerFrameDelta { get; set; }
-        private MultilevelPointer PointerState { get; set; }
-        private MultilevelPointer PointerCharacter { get; set; }
-        private MultilevelPointer PointerPlayerHP { get; set; }
-        private MultilevelPointer PointerEnemyEntryCount { get; set; }
-        private MultilevelPointer[] PointerEnemyEntries { get; set; }
-        private MultilevelPointer[] PointerInventoryEntries { get; set; }
-        private MultilevelPointer PointerInventoryCount { get; set; }
-        private MultilevelPointer PointerDeathCount { get; set; }
-        private MultilevelPointer PointerDifficulty { get; set; }
+        private MultilevelPointer PointerGameClock;
+        private MultilevelPointer PointerGameClockGameSaveData;
+        private MultilevelPointer PointerGameRankSystem;
+        private MultilevelPointer PointerPlayerManager;
+        private MultilevelPointer PointerCharacter;
+        private MultilevelPointer PointerInventoryCount;
+        private MultilevelPointer[] PointerInventoryManager;
+        private MultilevelPointer[] PointerInventorySlots;
+        private MultilevelPointer[] PointerEnemyManager;
+        private MultilevelPointer PointerMainFlowManager;
+        private MultilevelPointer PointerMainFlowManagerGameHeaderSaveData;
 
-        private GameInventoryEntry EmptySlot = new GameInventoryEntry();
-
+        private InventoryEntry EmptySlot = new InventoryEntry();
 
         internal GameMemoryRE3Scanner(Process process = null)
         {
@@ -65,8 +55,11 @@ namespace SRTPluginProviderRE3
             if (process == null)
                 return; // Do not continue if this is null.
 
-            if (!SelectPointerAddresses(GameHashes.DetectVersion(process.MainModule.FileName)))
+            GameVersion? gv = SelectPointerAddresses(GameHashes.DetectVersion(process.MainModule.FileName));
+            if (gv == null)
                 return; // Unknown version.
+
+            int mainFlowManagerOffset = (gv == GameVersion.RE3_WW_20230425_1) ? 0x1A0 : 0x198;
 
             int pid = GetProcessId(process).Value;
             memoryAccess = new ProcessMemoryHandler(pid);
@@ -75,268 +68,212 @@ namespace SRTPluginProviderRE3
                 BaseAddress = NativeWrappers.GetProcessBaseAddress(pid, ProcessMemory.PInvoke.ListModules.LIST_MODULES_64BIT); // Bypass .NET's managed solution for getting this and attempt to get this info ourselves via PInvoke since some users are getting 299 PARTIAL COPY when they seemingly shouldn't.
 
                 // Setup the pointers.
-                PointerCharacter = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressHP), 0x50, 0x88);
-                PointerIGT = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressIGT), 0x60);
-                PointerRank = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressRank));
-                PointerSaves = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressSaves), 0x198);
-                PointerMapID = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressMapID));
-                PointerFrameDelta = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressFrameDelta));
-                PointerState = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressState));
-                PointerPlayerHP = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressHP), 0x50, 0x20);
-                PointerDeathCount = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressDeathCount));
-                PointerDifficulty = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressDifficulty), 0x20, 0x50);
+                PointerGameClock = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressGameClock));
+                PointerGameClockGameSaveData = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressGameClock), 0x60);
+                PointerGameRankSystem = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressGameRankSystem));
+                PointerCharacter = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressPlayerManager), 0x78);
+                PointerPlayerManager = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressPlayerManager), 0x50, 0x10, 0x20, 0x2C0);
+                PointerMainFlowManager = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressMainFlowManager));
+                PointerMainFlowManagerGameHeaderSaveData = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressMainFlowManager), mainFlowManagerOffset); //0x198 on old version...
 
-                PointerEnemyEntryCount = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressEnemy), 0x30);
-                GenerateEnemyEntries();
-
-                PointerInventoryCount = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressInventory), 0x50);
-
-                PointerInventoryEntries = new MultilevelPointer[MAX_ITEMS];
-                for (int i = 0; i < PointerInventoryEntries.Length; ++i)
-                    PointerInventoryEntries[i] = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressInventory), 0x50, 0x98, 0x10, 0x20 + (i * 0x08), 0x18);
-
-                gameMemoryValues.PlayerInventory = new GameInventoryEntry[MAX_ITEMS];
-                for (int i = 0; i < gameMemoryValues.PlayerInventory.Length; ++i)
+                PointerInventoryCount = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressInventoryManager), 0x50, 0x98);
+                PointerInventoryManager = new MultilevelPointer[MAX_ITEMS];
+                PointerInventorySlots = new MultilevelPointer[MAX_ITEMS];
+                gameMemoryValues._playerInventory = new InventoryEntry[MAX_ITEMS];
+                for (int i = 0; i < MAX_ITEMS; ++i)
+                {
+                    PointerInventoryManager[i] = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressInventoryManager), 0x50, 0x98, 0x10, 0x20 + (i * 0x08), 0x18, 0x10);
+                    PointerInventorySlots[i] = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressInventoryManager), 0x50, 0x98, 0x10, 0x20 + (i * 0x08), 0x18);
                     gameMemoryValues.PlayerInventory[i] = EmptySlot;
+                }
+
+                gameMemoryValues._enemyHealth = new EnemyHP[MAX_ENTITES];
+                for (int i = 0; i < MAX_ENTITES; ++i)
+                    gameMemoryValues._enemyHealth[i] = new EnemyHP();
+
+                GenerateEnemyEntries();
             }
         }
 
-        private bool SelectPointerAddresses(GameVersion version)
+        private GameVersion? SelectPointerAddresses(GameVersion version)
         {
             switch (version)
             {
                 case GameVersion.RE3_WW_20230425_1:
                     {
-                        pointerAddressFrameDelta = 0x08CE67A0; //
-                        pointerAddressMapID = 0x054DF0F8; //
-                        pointerAddressSaves = 0x08DAFBC0; //
-                        pointerAddressDeathCount = 0x08DAFBC0; //
-                        pointerAddressDifficulty = 0x08D84C70; //
-                        pointerAddressState = 0x08DB8D20; //
-                        pointerAddressIGT = 0x08DB3BA0; //
-                        pointerAddressRank = 0x08D816A8; //
-                        pointerAddressHP = 0x08D85BA0; //
-                        pointerAddressInventory = 0x08D85BA0; //
-                        pointerAddressEnemy = 0x08D868B0; //
-                        return true;
+                        pAddressMainFlowManager = 0x09A70808;
+                        pAddressGameClock = 0x09A650A8;
+                        pAddressGameRankSystem = 0x09A6E608;
+                        pAddressPlayerManager = 0x09A772E8;
+                        pAddressInventoryManager = 0x09A68190;
+                        pAddressEnemyManager = 0x09A750C8;
+                        return GameVersion.RE3_WW_20230425_1;
                     }
+
                 case GameVersion.RE3_WW_20211217_1:
                     {
-                        pointerAddressFrameDelta = 0x08CE67A0; //
-                        pointerAddressMapID = 0x054DF0F8; //
-                        pointerAddressSaves = 0x08DAFBC0; //
-                        pointerAddressDeathCount = 0x08DAFBC0; //
-                        pointerAddressDifficulty = 0x08D84C70; //
-                        pointerAddressState = 0x08DB8D20; //
-                        pointerAddressIGT = 0x08DB3BA0; //
-                        pointerAddressRank = 0x08D816A8; //
-                        pointerAddressHP = 0x08D85BA0; //
-                        pointerAddressInventory = 0x08D85BA0; //
-                        pointerAddressEnemy = 0x08D868B0; //
-                        return true;
+                        pAddressMainFlowManager = 0x08DAFBC0;
+                        pAddressGameClock = 0x08DB3BA0;
+                        pAddressGameRankSystem = 0x08D816A8;
+                        pAddressPlayerManager = 0x08D89DF0;
+                        pAddressInventoryManager = 0x08D85BA0;
+                        pAddressEnemyManager = 0x08D888A8;
+                        return GameVersion.RE3_WW_20211217_1;
                     }
 
                 case GameVersion.RE3_WW_20200930_1:
                     {
-                        pointerAddressFrameDelta = 0x08CE37A0;
-                        pointerAddressMapID = 0x054DC0F8;
-                        pointerAddressSaves = 0x08DACBC0;
-                        pointerAddressDeathCount = 0x08DACBC0;
-                        pointerAddressDifficulty = 0x08D81C70;
-                        pointerAddressState = 0x08DB5D20;
-                        pointerAddressIGT = 0x08DB0BA0;
-                        pointerAddressRank = 0x08D7E6A8;
-                        pointerAddressHP = 0x08D82BA0;
-                        pointerAddressInventory = 0x08D82BA0;
-                        pointerAddressEnemy = 0x08D838B0;
-                        return true;
+                        pAddressMainFlowManager = 0x08DACBC0;
+                        pAddressGameClock = 0x08DB0BA0;
+                        pAddressGameRankSystem = 0x08D7E6A8;
+                        pAddressPlayerManager = 0x08D82BA0;
+                        pAddressInventoryManager = 0x08D82BA0;
+                        pAddressEnemyManager = 0x08D838B0;
+                        return GameVersion.RE3_WW_20200930_1;
                     }
 
-                // + C2040 ? + C2000 + C1F50
                 case GameVersion.BIO3_CEROZ_20200930_1:
                     {
-                        pointerAddressFrameDelta = 0x08C21760;
-                        pointerAddressMapID = 0x0541A0F8;
-                        pointerAddressSaves = 0x08CEAC70;
-                        pointerAddressDeathCount = 0x08CEAC70;
-                        pointerAddressDifficulty = 0x08CBF8F8;
-                        pointerAddressState = 0x08CF38B8;
-                        pointerAddressIGT = 0x08CEEC58;
-                        pointerAddressRank = 0x08CBC6C0;
-                        pointerAddressHP = 0x08CC0C00;
-                        pointerAddressInventory = 0x08CC0C00;
-                        pointerAddressEnemy = 0x08CC1898;
-
-                        return true;
+                        pAddressMainFlowManager = 0x08CEAC70;
+                        pAddressGameClock = 0x08CEEC58;
+                        pAddressGameRankSystem = 0x08CBC6C0;
+                        pAddressPlayerManager = 0x08CC0C00;
+                        pAddressInventoryManager = 0x08CC0C00; // incorrect
+                        pAddressEnemyManager = 0x08CC1898;
+                        return GameVersion.BIO3_CEROZ_20200930_1;
                     }
 
                 case GameVersion.RE3_WW_20200806_1:
                     {
-                        pointerAddressFrameDelta = 0x08CEA790;
-                        pointerAddressMapID = 0x054E30F8;
-                        pointerAddressSaves = 0x08DB3BB0;
-                        pointerAddressDeathCount = 0x08DB3BB0;
-                        pointerAddressDifficulty = 0x08D88C60;
-                        pointerAddressState = 0x08DBCD10;
-                        pointerAddressIGT = 0x08DB7B90;
-                        pointerAddressRank = 0x08D85680;
-                        pointerAddressHP = 0x08D89B90;
-                        pointerAddressInventory = 0x08D89B90;
-                        pointerAddressEnemy = 0x08D8A8A0;
-
-                        return true;
+                        pAddressMainFlowManager = 0x08DB3BB0;
+                        pAddressGameClock = 0x08DB7B90;
+                        pAddressGameRankSystem = 0x08D85680;
+                        pAddressPlayerManager = 0x08D89B90;
+                        pAddressInventoryManager = 0x08D89B90;
+                        pAddressEnemyManager = 0x08D8A8A0;
+                        return GameVersion.RE3_WW_20200806_1;
                     }
 
                 case GameVersion.BIO3_CEROZ_20200806_1:
                     {
-                        pointerAddressFrameDelta = 0x08CEA790;
-                        pointerAddressMapID = 0x054E30F8;
-                        pointerAddressSaves = 0x08DB3BB0;
-                        pointerAddressDeathCount = 0x08DB3BB0;
-                        pointerAddressDifficulty = 0x08D88C60;
-                        pointerAddressState = 0x08DBCD10;
-                        pointerAddressIGT = 0x08DB7B90;
-                        pointerAddressRank = 0x08D85680;
-                        pointerAddressHP = 0x08D89B90;
-                        pointerAddressInventory = 0x08D89B90;
-                        pointerAddressEnemy = 0x08D8A8A0;
-
-                        return true;
+                        pAddressMainFlowManager = 0x08DB3BB0;
+                        pAddressGameClock = 0x08DB7B90;
+                        pAddressGameRankSystem = 0x08D85680;
+                        pAddressPlayerManager = 0x08D89B90;
+                        pAddressInventoryManager = 0x08D89B90;
+                        pAddressEnemyManager = 0x08D8A8A0;
+                        return GameVersion.BIO3_CEROZ_20200806_1;
                     }
 
                 case GameVersion.RE3_WW_20200603_1:
                     {
-                        pointerAddressFrameDelta = 0x08C1B4D0;
-                        pointerAddressMapID = 0x054190F8;
-                        pointerAddressSaves = 0x08CE4720;
-                        pointerAddressDeathCount = 0x08CE4720;
-                        pointerAddressDifficulty = 0x08CB9598;
-                        pointerAddressState = 0x08CEDA98;
-                        pointerAddressIGT = 0x08CE8430;
-                        pointerAddressRank = 0x08CB62A8;
-                        pointerAddressHP = 0x08CBA618;
-                        pointerAddressInventory = 0x08CBA618;
-                        pointerAddressEnemy = 0x08CB8618;
-
-                        return true;
+                        pAddressMainFlowManager = 0x08CE4720;
+                        pAddressGameClock = 0x08CE8430;
+                        pAddressGameRankSystem = 0x08CB62A8;
+                        pAddressPlayerManager = 0x08CBA618;
+                        pAddressInventoryManager = 0x08CBA618;
+                        pAddressEnemyManager = 0x08CB8618;
+                        return GameVersion.RE3_WW_20200603_1;
                     }
 
                 case GameVersion.BIO3_CEROZ_20200603_1:
                     {
-                        pointerAddressFrameDelta = 0x08CDD490;
-                        pointerAddressMapID = 0x054DB0F8;
-                        pointerAddressSaves = 0x08DA66F0;
-                        pointerAddressDeathCount = 0x08DA66F0;
-                        pointerAddressDifficulty = 0x08D7B548;
-                        pointerAddressState = 0x08DAFA70;
-                        pointerAddressIGT = 0x08DAA3F0;
-                        pointerAddressRank = 0x08D78258;
-                        pointerAddressHP = 0x08D7C5E8;
-                        pointerAddressInventory = 0x08D7C5E8;
-                        pointerAddressEnemy = 0x08D7A5A8;
-
-                        return true;
+                        pAddressMainFlowManager = 0x08DA66F0;
+                        pAddressGameClock = 0x08DAA3F0;
+                        pAddressGameRankSystem = 0x08D78258;
+                        pAddressPlayerManager = 0x08D7C5E8;
+                        pAddressInventoryManager = 0x08D7C5E8;
+                        pAddressEnemyManager = 0x08D7A5A8;
+                        return GameVersion.BIO3_CEROZ_20200603_1;
                     }
             }
 
             // If we made it this far... rest in pepperonis. We have failed to detect any of the correct versions we support and have no idea what pointer addresses to use. Bail out.
-            return false;
+            return null;
         }
 
-        /// <summary>
-        /// Dereferences a 4-byte signed integer via the PointerEnemyEntryCount pointer to detect how large the enemy pointer table is and then create the pointer table entries if required.
-        /// </summary>
         private unsafe void GenerateEnemyEntries()
         {
-            fixed (int* p = &EnemyTableCount)
-                PointerEnemyEntryCount.TryDerefInt(0x1C, p); // Get the size of the enemy pointer table. This seems to double (4, 8, 16, 32, ...) but never decreases, even after a new game is started.
-            if (PointerEnemyEntries == null || PointerEnemyEntries.Length != EnemyTableCount) // Enter if the pointer table is null (first run) or the size does not match.
+            if (PointerEnemyManager == null) // Enter if the pointer table is null (first run) or the size does not match.
             {
-                PointerEnemyEntries = new MultilevelPointer[EnemyTableCount]; // Create a new enemy pointer table array with the detected size.
-                for (int i = 0; i < PointerEnemyEntries.Length; ++i) // Loop through and create all of the pointers for the table.
-                    PointerEnemyEntries[i] = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pointerAddressEnemy), 0x30, 0x20 + (i * 0x08), 0x300);
+                PointerEnemyManager = new MultilevelPointer[MAX_ENTITES]; // Create a new enemy pointer table array with the detected size.
+                for (int i = 0; i < MAX_ENTITES; ++i) // Loop through and create all of the pointers for the table.
+                    PointerEnemyManager[i] = new MultilevelPointer(memoryAccess, IntPtr.Add(BaseAddress, pAddressEnemyManager), 0x78, 0x10, 0x20 + (i * 0x08), 0x300);
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         internal void UpdatePointers()
         {
+            PointerGameClock.UpdatePointers();
+            PointerGameClockGameSaveData.UpdatePointers();
+            PointerGameRankSystem.UpdatePointers();
+            PointerPlayerManager.UpdatePointers();
             PointerCharacter.UpdatePointers();
-            PointerIGT.UpdatePointers();
-            PointerPlayerHP.UpdatePointers();
-            PointerRank.UpdatePointers();
-            PointerSaves.UpdatePointers();
-            PointerMapID.UpdatePointers();
-            PointerFrameDelta.UpdatePointers();
-            PointerState.UpdatePointers();
-
-            PointerEnemyEntryCount.UpdatePointers();
-            GenerateEnemyEntries(); // This has to be here for the next part.
-            for (int i = 0; i < PointerEnemyEntries.Length; ++i)
-                PointerEnemyEntries[i].UpdatePointers();
+            PointerMainFlowManager.UpdatePointers();
+            PointerMainFlowManagerGameHeaderSaveData.UpdatePointers();
 
             PointerInventoryCount.UpdatePointers();
-            for (int i = 0; i < PointerInventoryEntries.Length; ++i)
-                PointerInventoryEntries[i].UpdatePointers();
+            for (int i = 0; i < MAX_ITEMS; ++i)
+            {
+                PointerInventoryManager[i].UpdatePointers();
+                PointerInventorySlots[i].UpdatePointers();
+            }
 
-            PointerDeathCount.UpdatePointers();
-            PointerDifficulty.UpdatePointers();
+            GenerateEnemyEntries(); // This has to be here for the next part.
+            for (int i = 0; i < MAX_ENTITES; ++i)
+                PointerEnemyManager[i].UpdatePointers();
         }
 
         internal unsafe IGameMemoryRE3 Refresh()
         {
-            bool success;
-
-            // Frame Delta
-            gameMemoryValues._frameDelta = PointerFrameDelta.DerefFloat(0x388);
-
-            // State
-            gameMemoryValues.GameBools = PointerState.Deref<GameBools>(0x130);
-
-            // IGT
-            gameMemoryValues._timer = PointerIGT.Deref<GameTimer>(0x18);
-
-            // Player HP
-            gameMemoryValues._playerCharacter = PointerCharacter.DerefInt(0x54);
-            gameMemoryValues._player = PointerPlayerHP.Deref<GamePlayer>(0x54);
-
-            gameMemoryValues._rankManager = PointerRank.Deref<GameRankManager>(0x58);
-
-            gameMemoryValues._saves = PointerSaves.DerefInt(0x24);
-            gameMemoryValues._mapID = PointerMapID.DerefInt(0x88);
-
-            // Enemy HP
-            GenerateEnemyEntries();
-            if (gameMemoryValues.EnemyHealth == null || gameMemoryValues.EnemyHealth.Length < EnemyTableCount)
-            {
-                gameMemoryValues.EnemyHealth = new EnemyHP[EnemyTableCount];
-                for (int i = 0; i < gameMemoryValues.EnemyHealth.Length; ++i)
-                    gameMemoryValues.EnemyHealth[i] = new EnemyHP();
-            }
-            for (int i = 0; i < gameMemoryValues.EnemyHealth.Length; ++i)
-            {
-                if (i < PointerEnemyEntries.Length)
-                { // While we're within the size of the enemy table, set the values.
-                    GamePlayer enemy = PointerEnemyEntries[i].Deref<GamePlayer>(0x54);
-                    gameMemoryValues.EnemyHealth[i].MaximumHP = enemy.MaxHP;
-                    gameMemoryValues.EnemyHealth[i].CurrentHP = enemy.CurrentHP;
-                }
-                else
-                { // We're beyond the current size of the enemy table. It must have shrunk because it was larger before but for the sake of performance, we're not going to constantly recreate the array any time the size doesn't match. Just blank out the remaining array values.
-                    gameMemoryValues.EnemyHealth[i].MaximumHP = 0;
-                    gameMemoryValues.EnemyHealth[i].CurrentHP = 0;
-                }
-            }
+            gameMemoryValues._timer = PointerGameClockGameSaveData.Deref<GameClockSaveData>(0x0);
+            gameMemoryValues._gameClock = PointerGameClock.Deref<GameClock>(0x0);
+            gameMemoryValues._rankManager = PointerGameRankSystem.Deref<GameRankSystem>(0x0);
+            gameMemoryValues._player = PointerPlayerManager.Deref<HitPointController>(0x0);
+            gameMemoryValues._playerCharacter = PointerCharacter.DerefInt(0x18);
+            gameMemoryValues._playerDeathCount = PointerMainFlowManager.DerefInt(0xC0);
+            gameMemoryValues._difficulty = PointerMainFlowManagerGameHeaderSaveData.DerefInt(0x20);
+            gameMemoryValues._saves = PointerMainFlowManagerGameHeaderSaveData.DerefInt(0x24);
 
             // Inventory
-            gameMemoryValues._playerInventoryCount = PointerInventoryCount.DerefInt(0x90);
-            for (int i = 0; i < PointerInventoryEntries.Length; ++i)
-                gameMemoryValues.PlayerInventory[i] = PointerInventoryEntries[i].Deref<GameInventoryEntry>(0x0);
+            gameMemoryValues._playerInventoryCount = PointerInventoryCount.DerefInt(0x18);
+            for (int i = 0; i < MAX_ITEMS; ++i)
+            {
+                var entry = PointerInventoryManager[i].Deref<InventorySlot>(0x0);
+                gameMemoryValues.PlayerInventory[i].SlotPosition = PointerInventorySlots[i].DerefInt(0x28);
+                gameMemoryValues.PlayerInventory[i].ItemID = entry.ItemID;
+                gameMemoryValues.PlayerInventory[i].WeaponID = entry.WeaponID;
+                gameMemoryValues.PlayerInventory[i].Attachments = entry.Attachments;
+                gameMemoryValues.PlayerInventory[i].BulletID = entry.BulletID;
+                gameMemoryValues.PlayerInventory[i].Quantity = entry.Quantity;
+            }
 
-            gameMemoryValues._playerDeathCount = PointerDeathCount.DerefInt(0xC0);
-            gameMemoryValues._difficulty = PointerDifficulty.DerefInt(0x78);
+            //Enemies
+            GenerateEnemyEntries();
+            for (int i = 0; i < MAX_ENTITES; ++i)
+            {
+                try
+                {
+                    // Check to see if the pointer is currently valid. It can become invalid when rooms are changed.
+                    if (PointerEnemyManager[i].Address != IntPtr.Zero)
+                    {
+                        gameMemoryValues.EnemyHealth[i]._maximumHP = PointerEnemyManager[i].DerefInt(0x54);
+                        gameMemoryValues.EnemyHealth[i]._currentHP = PointerEnemyManager[i].DerefInt(0x58);
+                    }
+                    else
+                    {
+                        // Clear these values out so stale data isn't left behind when the pointer address is no longer value and nothing valid gets read.
+                        // This happens when the game removes pointers from the table (map/room change).
+                        gameMemoryValues.EnemyHealth[i]._maximumHP = 0;
+                        gameMemoryValues.EnemyHealth[i]._currentHP = 0;
+                    }
+                }
+                catch
+                {
+                    gameMemoryValues.EnemyHealth[i]._maximumHP = 0;
+                    gameMemoryValues.EnemyHealth[i]._currentHP = 0;
+                }
+            }
 
             HasScanned = true;
             return gameMemoryValues;
