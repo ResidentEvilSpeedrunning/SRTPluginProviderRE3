@@ -9,9 +9,9 @@ namespace SRTPluginProviderRE3
 
         public string Description => "A game memory provider plugin for Resident Evil 3 (2020).";
 
-        public string Author => "Squirrelies";
+        public string Author => "VideoGameRoulette & Squirrelies";
 
-        public Uri MoreInfoURL => new Uri("https://github.com/Squirrelies/SRTPluginProviderRE3");
+        public Uri MoreInfoURL => new Uri("https://github.com/VideoGameRoulette/SRTPluginProviderRE3");
 
         public int VersionMajor => assemblyFileVersion.ProductMajorPart;
 

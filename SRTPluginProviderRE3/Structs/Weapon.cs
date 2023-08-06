@@ -1,19 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using SRTPluginProviderRE3.Structs.GameStructs;
 
 namespace SRTPluginProviderRE3.Structs
 {
-    [StructLayout(LayoutKind.Sequential)]
-    public struct Weapon : IEquatable<Weapon>, IEqualityComparer<Weapon>
+    public struct Weapon : IEquatable<Weapon>
     {
-        public WeaponEnumeration WeaponID;
-        public AttachmentsFlag Attachments;
+        public WeaponType WeaponID;
+        public WeaponParts Attachments;
 
-        public bool Equals(Weapon other) => Equals(this, other);
-
-        public bool Equals(Weapon x, Weapon y) => (int)x.WeaponID == (int)y.WeaponID && (int)x.Attachments == (int)y.Attachments;
-
-        public int GetHashCode(Weapon obj) => (int)obj.WeaponID ^ (int)obj.Attachments;
+        public bool Equals(Weapon other) => (int)this.WeaponID == (int)other.WeaponID && (int)this.Attachments == (int)other.Attachments;
     }
 }
