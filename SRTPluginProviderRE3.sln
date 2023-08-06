@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30011.22
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SRTPluginProviderRE3", "SRTPluginProviderRE3\SRTPluginProviderRE3.csproj", "{FB803174-8A74-4CC0-8645-B1D6C4F53288}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SRTPluginBase", "..\..\Squirrelies\SRTHost\SRTPluginBase\SRTPluginBase.csproj", "{431972BA-04CE-4D4B-8ECE-80D351B02868}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProcessMemory", "..\..\Squirrelies\ProcessMemory\ProcessMemory\ProcessMemory.csproj", "{C43019D3-C173-4C82-B8A0-6927CE5FCA38}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SRTPluginBase", "..\..\SpeedRunTool\SRTHost\SRTPluginBase\SRTPluginBase.csproj", "{88841A4A-CCF9-40AD-A157-63E10C40C3E9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +17,10 @@ Global
 		{FB803174-8A74-4CC0-8645-B1D6C4F53288}.Debug|x64.Build.0 = Debug|x64
 		{FB803174-8A74-4CC0-8645-B1D6C4F53288}.Release|x64.ActiveCfg = Release|x64
 		{FB803174-8A74-4CC0-8645-B1D6C4F53288}.Release|x64.Build.0 = Release|x64
-		{431972BA-04CE-4D4B-8ECE-80D351B02868}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{431972BA-04CE-4D4B-8ECE-80D351B02868}.Debug|x64.Build.0 = Debug|Any CPU
-		{431972BA-04CE-4D4B-8ECE-80D351B02868}.Release|x64.ActiveCfg = Release|Any CPU
-		{431972BA-04CE-4D4B-8ECE-80D351B02868}.Release|x64.Build.0 = Release|Any CPU
-		{C43019D3-C173-4C82-B8A0-6927CE5FCA38}.Debug|x64.ActiveCfg = Debug|x64
-		{C43019D3-C173-4C82-B8A0-6927CE5FCA38}.Debug|x64.Build.0 = Debug|x64
-		{C43019D3-C173-4C82-B8A0-6927CE5FCA38}.Release|x64.ActiveCfg = Release|x64
-		{C43019D3-C173-4C82-B8A0-6927CE5FCA38}.Release|x64.Build.0 = Release|x64
+		{88841A4A-CCF9-40AD-A157-63E10C40C3E9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{88841A4A-CCF9-40AD-A157-63E10C40C3E9}.Debug|x64.Build.0 = Debug|Any CPU
+		{88841A4A-CCF9-40AD-A157-63E10C40C3E9}.Release|x64.ActiveCfg = Release|Any CPU
+		{88841A4A-CCF9-40AD-A157-63E10C40C3E9}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
