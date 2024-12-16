@@ -23,6 +23,9 @@ namespace SRTPluginProviderRE3
         // Latest CeroD RT DX11 Build TO-DO
         private static readonly byte[] re3cerod_11047603 = new byte[32] { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
 
+        // Build : https://steamdb.info/patchnotes/11960962/
+        private static readonly byte[] re3WW_11960962 = new byte[32] { 0x54, 0x58, 0x2F, 0x13, 0xE6, 0xE7, 0x0C, 0xD3, 0x12, 0x02, 0x9E, 0x8D, 0xAB, 0x6C, 0xAB, 0x88, 0x87, 0x08, 0xAB, 0x2B, 0x14, 0xB9, 0xD2, 0xFD, 0x69, 0x37, 0xFE, 0x39, 0xE1, 0x53, 0xD1, 0xF9 };
+        
         private static void OutputVersionString(byte[] cs)
         {
             StringBuilder sb = new StringBuilder("private static readonly byte[] re3??_00000000 = new byte[32] { ");
@@ -37,7 +40,7 @@ namespace SRTPluginProviderRE3
                 }
             }
 
-            sb.Append(" }");
+            sb.Append(" };");
             Console.WriteLine("Please DM VideoGameRoulette or Squirrelies with the version.log");
             // write output to file
             string filename = "version.log";
@@ -74,6 +77,11 @@ namespace SRTPluginProviderRE3
             {
                 Console.WriteLine("Game Detected! Version: CeroD dx11_non-rt Release");
                 return GameVersion.RE3_CEROD_11047603;
+            }
+            else if (checksum.SequenceEqual(re3WW_11960962))
+            {
+                Console.WriteLine("Game Detected! Version: re3WW_11960962 Release");
+                return GameVersion.RE3_NEW_11960962;
             }
             else
             {

@@ -7,5 +7,6 @@
         RE3_WW_11026988, // Latest RT DX12 Build
         RE3_CEROD_11047603, // Latest CeroD DX11 Build
         RE3_CEROD_11026646, // Latest CeroD RT DX12 Build
+        RE3_NEW_11960962, // Build : https://steamdb.info/patchnotes/11960962/
     }
 }

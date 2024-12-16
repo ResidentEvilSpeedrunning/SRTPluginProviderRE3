@@ -143,6 +143,17 @@ namespace SRTPluginProviderRE3
                         paMapId = 0x0;
                         return GameVersion.RE3_CEROD_11047603;
                     }
+                case GameVersion.RE3_NEW_11960962:
+                    {
+                        paEnemyManager = 0x09A751D0;
+                        paGameClock = 0x9A651B0;
+                        paGameRankSystem = 0x09A6E718;
+                        paInventoryManager = 0x09A682A0;
+                        paPlayerManager = 0x09A773F8;
+                        paLocationId = 0x9A76560;
+                        paMapId = 0x9A76560;
+                        return GameVersion.RE3_NEW_11960962;
+                    }
             }
 
             // If we made it this far... rest in pepperonis. We have failed to detect any of the correct versions we support and have no idea what pointer addresses to use. Bail out.
